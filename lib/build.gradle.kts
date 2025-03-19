@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     `java-library`
     `maven-publish`
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 group = "dk.holonet"
@@ -14,14 +15,9 @@ repositories {
 }
 
 dependencies {
-    // This dependency is exported to consumers, that is to say found on their compile classpath.
-//    api(libs.commons.math3)
-
-    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-//    implementation(libs.guava)
-
     api(libs.pf4j)
     implementation("org.jetbrains.compose.runtime:runtime:1.5.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 }
 
 java {

@@ -1,11 +1,25 @@
 package dk.holonet.core
 
 import androidx.compose.runtime.Composable
+import dk.holonet.components.Position
 import org.pf4j.ExtensionPoint
 
-interface HoloNetModule : ExtensionPoint {
-    val config: ModuleConfig
+abstract class HoloNetModule() : ExtensionPoint {
+    private lateinit var _position: Position
+
+    var position: Position
+        get() = _position
+        private set(value) {
+            _position = value
+        }
 
     @Composable
-    fun render()
+    abstract fun render()
+
+    open fun configure(configuration: ModuleConfiguration?) {
+        if (configuration == null) return // No configuration. Find a way to handle this
+
+        // Basic configuration
+        position = configuration.position
+    }
 }
