@@ -16,6 +16,8 @@ repositories {
 
 dependencies {
     api(libs.pf4j)
+    implementation("io.insert-koin:koin-core:4.0.2")
+    implementation("io.insert-koin:koin-compose:4.0.2")
     implementation("org.jetbrains.compose.runtime:runtime:1.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 }

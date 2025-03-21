@@ -2,9 +2,10 @@ package dk.holonet.core
 
 import androidx.compose.runtime.Composable
 import dk.holonet.components.Position
+import org.koin.core.component.KoinComponent
 import org.pf4j.ExtensionPoint
 
-abstract class HoloNetModule() : ExtensionPoint {
+abstract class HoloNetModule() : ExtensionPoint, KoinComponent {
     private lateinit var _position: Position
 
     var position: Position
