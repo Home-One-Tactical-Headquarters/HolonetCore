@@ -23,7 +23,7 @@ dependencies {
     implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.core)
     implementation(libs.koin.compose)
-    implementation(libs.koin.compose.viewmodel)
+//    implementation(libs.koin.compose.viewmodel)
     implementation("org.jetbrains.compose.runtime:runtime:1.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation(libs.androidx.lifecycle.viewmodel.compose)
