@@ -11,15 +11,23 @@ group = "dk.holonet"
 version = "0.0.1"
 
 repositories {
+    google()
     mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev/")
+    maven("https://repo1.maven.org/maven2/")
+    mavenLocal()
 }
 
 dependencies {
     api(libs.pf4j)
-    implementation("io.insert-koin:koin-core:4.0.2")
-    implementation("io.insert-koin:koin-compose:4.0.2")
+    implementation(project.dependencies.platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
     implementation("org.jetbrains.compose.runtime:runtime:1.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 }
 
 java {

@@ -1,4 +1,4 @@
-package dk.holonet.components
+package dk.holonet.core
 
 enum class Position(s: String) {
     TOP("top"),

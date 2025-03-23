@@ -1,7 +1,5 @@
 package dk.holonet.core
 
-import dk.holonet.components.Position
-import dk.holonet.components.PositionSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -16,7 +14,7 @@ data class HolonetConfiguration(
 data class ModuleConfiguration(
     @Serializable(with = PositionSerializer::class)
     val position: Position,
-    val properties: JsonObject = JsonObject(emptyMap()) // Dynamic properties
+    val config: JsonObject = JsonObject(emptyMap()) // Dynamic properties
 )
 
 // Helper method to get modules to be loaded

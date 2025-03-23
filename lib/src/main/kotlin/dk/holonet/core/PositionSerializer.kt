@@ -1,4 +1,4 @@
-package dk.holonet.components
+package dk.holonet.core
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
