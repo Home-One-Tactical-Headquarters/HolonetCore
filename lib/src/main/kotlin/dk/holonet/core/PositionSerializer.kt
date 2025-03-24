@@ -22,7 +22,7 @@ object PositionSerializer : KSerializer<Position> {
         return try {
             Position.valueOf(position)
         } catch (e: IllegalArgumentException) {
-            Position.CENTER // Default fallback
+            Position.TOP_CENTER // Default fallback
         }
     }
 }
