@@ -14,6 +14,7 @@ data class HolonetConfiguration(
 data class ModuleConfiguration(
     @Serializable(with = PositionSerializer::class)
     val position: Position,
+    val priority: Int = 0,
     val config: JsonObject = JsonObject(emptyMap()) // Dynamic properties
 )
 

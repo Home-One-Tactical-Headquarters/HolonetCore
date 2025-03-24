@@ -6,11 +6,18 @@ import org.pf4j.ExtensionPoint
 
 abstract class HoloNetModule() : ExtensionPoint, KoinComponent {
     private lateinit var _position: Position
+    private var _priority: Int = 0
 
     var position: Position
         get() = _position
         private set(value) {
             _position = value
+        }
+
+    var priority: Int
+        get() = _priority
+        private set(value) {
+            _priority = value
         }
 
     @Composable
@@ -21,5 +28,6 @@ abstract class HoloNetModule() : ExtensionPoint, KoinComponent {
 
         // Basic configuration
         position = configuration.position
+        priority = configuration.priority
     }
 }
