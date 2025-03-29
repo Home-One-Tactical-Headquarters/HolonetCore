@@ -1,12 +1,16 @@
+import com.vanniktech.maven.publish.SonatypeHost
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+
 plugins {
-    alias(libs.plugins.jvm)
+    alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     `java-library`
-    `maven-publish`
     kotlin("plugin.serialization") version "2.1.0"
+    alias(libs.plugins.vanniktech.mavenPublish)
 }
 
+val artifactId = "core"
 group = "dk.holonet"
 version = "0.0.1"
 
@@ -18,43 +22,73 @@ repositories {
     mavenLocal()
 }
 
-dependencies {
-    api(libs.pf4j)
-    implementation(project.dependencies.platform(libs.koin.bom))
-    implementation(libs.koin.core)
-    implementation(libs.koin.compose)
-//    implementation(libs.koin.compose.viewmodel)
-    implementation("org.jetbrains.compose.runtime:runtime:1.5.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(23)
-    }
-}
-
 kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+    jvm()
+//    linuxX64()
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+    }
+
+    sourceSets {
+        val commonMain by getting {
+           dependencies {
+               implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+               implementation("org.jetbrains.compose.runtime:runtime:1.7.3")
+           }
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                api(libs.pf4j)
+                implementation(project.dependencies.platform(libs.koin.bom))
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)
+//    implementation(libs.koin.compose.viewmodel)
+                implementation(libs.androidx.lifecycle.viewmodel.compose)
+                implementation(libs.androidx.lifecycle.runtime.compose)
+            }
+        }
     }
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = "dk.holonet"
-            artifactId = "core"
-            version = project.version.toString()
-            from(components["java"])
-        }
-    }
     repositories {
         mavenLocal()
+    }
+}
+
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+
+//    signAllPublications()
+
+    coordinates(group.toString(), artifactId, version.toString())
+
+    pom {
+        name = "Holonet Core"
+        description = "Holonet Core library containing the core functionality of the Holonet framework."
+        inceptionYear = "2025"
+        url = "https://github.com/Home-One-Tactical-Headquarters/HolonetCore"
+        /*licenses {
+            license {
+                name = "XXX"
+                url = "YYY"
+                distribution = "ZZZ"
+            }
+        }
+        developers {
+            developer {
+                id = "XXX"
+                name = "YYY"
+                url = "ZZZ"
+            }
+        }
+        scm {
+            url = "XXX"
+            connection = "YYY"
+            developerConnection = "ZZZ"
+        }*/
     }
 }
 
