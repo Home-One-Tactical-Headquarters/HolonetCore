@@ -1,7 +1,7 @@
 [versions]
-pf4j = "3.6.0"
-compose-multiplatform = "1.7.0"
-kotlin = "2.1.0"
+pf4j = "3.13.0"
+compose-multiplatform = "1.8.2"
+kotlin = "2.2.10"
 androidx-lifecycle = "2.8.3"
 koin-bom = "3.5.6"
 
