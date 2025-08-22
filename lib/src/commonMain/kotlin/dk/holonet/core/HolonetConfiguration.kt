@@ -1,8 +1,10 @@
 package dk.holonet.core
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 
 @Serializable
@@ -25,3 +27,4 @@ fun HolonetConfiguration.getModulesToLoad(): List<String> = modules.keys.toList(
 fun JsonElement.asString(): String = this.jsonPrimitive.content
 fun JsonElement.asInt(): Int = this.jsonPrimitive.content.toInt()
 fun JsonElement.asBoolean(): Boolean = this.jsonPrimitive.content.toBoolean()
+inline fun <reified T> JsonElement.asList(): List<T> = Json.decodeFromJsonElement<List<T>>(this)
