@@ -8,11 +8,12 @@ plugins {
     `java-library`
     kotlin("plugin.serialization") version "2.1.0"
     alias(libs.plugins.vanniktech.mavenPublish)
+    signing
 }
 
 val artifactId = "core"
 group = "dk.holonet"
-version = "0.0.1"
+version = "0.0.2"
 
 repositories {
     google()
@@ -55,13 +56,27 @@ kotlin {
 publishing {
     repositories {
         mavenLocal()
+        mavenCentral() {
+            credentials {
+                username = System.getenv("mavenCentralUsername")
+                password = System.getenv("mavenCentralPassword")
+            }
+        }
     }
 }
 
-mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+signing {
+    // Only sign if not publishing locally
+    isRequired = !isPublishingLocally
+    useGpgCmd()
+}
 
-//    signAllPublications()
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+
+    if (!isPublishingLocally) {
+        signAllPublications()
+    }
 
     coordinates(group.toString(), artifactId, version.toString())
 
@@ -69,26 +84,25 @@ mavenPublishing {
         name = "Holonet Core"
         description = "Holonet Core library containing the core functionality of the Holonet framework."
         inceptionYear = "2025"
-        url = "https://github.com/Home-One-Tactical-Headquarters/HolonetCore"
-        /*licenses {
+        url = "https://github.com/Home-One-Tactical-Headquarters/HolonetCore/"
+        licenses {
             license {
-                name = "XXX"
-                url = "YYY"
-                distribution = "ZZZ"
+                name = "MIT License"
+                url = "https://opensource.org/license/MIT"
+                distribution = "https://opensource.org/license/MIT"
             }
         }
         developers {
             developer {
-                id = "XXX"
-                name = "YYY"
-                url = "ZZZ"
+                id = "GlitzyWorm"
+                name = "Mathias Jelshøj"
+                url = "https://github.com/GlitzyWorm/"
             }
         }
         scm {
-            url = "XXX"
-            connection = "YYY"
-            developerConnection = "ZZZ"
-        }*/
+            url = "https://github.com/Home-One-Tactical-Headquarters/HolonetCore/"
+            connection = "scm:git:git://github.com/Home-One-Tactical-Headquarters/HolonetCore.git"
+        }
     }
 }
 
@@ -97,3 +111,5 @@ tasks.withType<PublishToMavenLocal>().configureEach {
         println("Publishing: ${publication.groupId}:${publication.artifactId}:${publication.version}")
     }
 }
+
+val isPublishingLocally = gradle.startParameter.taskNames.any { it.contains("MavenLocal") }
