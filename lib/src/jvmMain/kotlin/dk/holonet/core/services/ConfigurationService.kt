@@ -2,6 +2,9 @@ package dk.holonet.core.services
 
 import dk.holonet.core.HolonetConfiguration
 import dk.holonet.core.HolonetSchema
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.copyTo
+import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,9 +44,9 @@ class ConfigurationService {
         }
     }
 
-    suspend fun fetchConfigurationSchema(): List<HolonetSchema> {
+    suspend fun fetchConfigurationSchema(): Map<String, HolonetSchema> {
         return withContext(Dispatchers.IO) {
-            val schemas = mutableListOf<HolonetSchema>()
+            val schemas = mutableMapOf<String, HolonetSchema>()
 
             // Load all schema files from plugins folder if it exists
             val pluginDir = File(getPluginsFolder())
@@ -57,7 +60,7 @@ class ConfigurationService {
                             val jsonString = file.readText()
                             try {
                                 val schema = json.decodeFromString<HolonetSchema>(jsonString)
-                                schemas.add(schema)
+                                schemas[file.nameWithoutExtension] = schema
                             } catch (e: Exception) {
                                 println("Failed to parse schema file ${file.name}: ${e.message}")
                             }
@@ -67,6 +70,58 @@ class ConfigurationService {
             }
 
             schemas
+        }
+    }
+
+    suspend fun getModuleNames(): List<String> {
+        return withContext(Dispatchers.IO) {
+            val moduleNames = mutableListOf<String>()
+            val pluginDir = File(getPluginsFolder())
+
+            if (pluginDir.exists() && pluginDir.isDirectory) {
+                // Load all subdirectories
+                pluginDir.listFiles { file -> file.isDirectory }?.forEach { dir ->
+                    moduleNames.add(dir.name)
+                }
+            }
+
+            moduleNames
+        }
+    }
+
+    suspend fun addModules(modules: List<PlatformFile>) {
+        withContext(Dispatchers.IO) {
+            val pluginDir = File(getPluginsFolder())
+            if (!pluginDir.exists()) {
+                pluginDir.mkdirs()
+            }
+
+            modules.forEach { module ->
+                val destFile = PlatformFile("$pluginDir/${module.name}")
+                module.copyTo(destFile)
+            }
+        }
+    }
+
+    suspend fun deleteModules(moduleNames: List<String>) {
+        withContext(Dispatchers.IO) {
+            val pluginDir = File(getPluginsFolder())
+            if (!pluginDir.exists()) {
+                return@withContext
+            }
+
+            moduleNames.forEach { moduleName ->
+                // Delete folder
+                val moduleDir = File(pluginDir, moduleName)
+                if (moduleDir.exists() && moduleDir.isDirectory) {
+                    moduleDir.deleteRecursively()
+                }
+                // Delete zip file
+                val moduleZip = File(pluginDir, "$moduleName.zip")
+                if (moduleZip.exists() && moduleZip.isFile) {
+                    moduleZip.delete()
+                }
+            }
         }
     }
 

@@ -48,6 +48,7 @@ kotlin {
 //    implementation(libs.koin.compose.viewmodel)
                 implementation(libs.androidx.lifecycle.viewmodel.compose)
                 implementation(libs.androidx.lifecycle.runtime.compose)
+                implementation(libs.filekit.core)
             }
         }
     }
