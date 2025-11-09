@@ -13,7 +13,7 @@ plugins {
 
 val artifactId = "core"
 group = "dk.holonet"
-version = "0.0.2"
+version = "0.0.3"
 
 repositories {
     google()
