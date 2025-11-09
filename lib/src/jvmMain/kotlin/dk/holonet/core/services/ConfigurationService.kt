@@ -4,6 +4,7 @@ import dk.holonet.core.HolonetConfiguration
 import dk.holonet.core.HolonetSchema
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.copyTo
+import io.github.vinceglb.filekit.exists
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import org.pf4j.util.FileUtils
 import java.io.File
+import java.util.jar.JarFile
+import kotlin.collections.forEach
 
 class ConfigurationService {
 
@@ -19,6 +23,14 @@ class ConfigurationService {
 
     private val _cachedConfig: MutableStateFlow<HolonetConfiguration?> = MutableStateFlow(null)
     val cachedConfig: StateFlow<HolonetConfiguration?> = _cachedConfig.asStateFlow()
+
+    private val _cachedModules = mutableMapOf<String, File>()
+
+    private var pluginService: PluginServiceInterface? = null
+
+    fun setPluginManager(manager: PluginServiceInterface) {
+        this.pluginService = manager
+    }
 
     suspend fun fetchConfiguration(): HolonetConfiguration {
         return withContext(Dispatchers.IO) {
@@ -53,18 +65,30 @@ class ConfigurationService {
 
             if (pluginDir.exists() && pluginDir.isDirectory) {
                 // Load all subdirectories
-                pluginDir.listFiles { file -> file.isDirectory }?.forEach { dir ->
-                    val classesDir = File(dir, "classes")
-                    if (classesDir.exists() && classesDir.isDirectory) {
-                        classesDir.listFiles { file -> file.extension == "json" }?.forEach { file ->
-                            val jsonString = file.readText()
-                            try {
-                                val schema = json.decodeFromString<HolonetSchema>(jsonString)
-                                schemas[file.nameWithoutExtension] = schema
-                            } catch (e: Exception) {
-                                println("Failed to parse schema file ${file.name}: ${e.message}")
-                            }
+                pluginDir.listFiles { file -> FileUtils.isJarFile(file.toPath()) }?.forEach { jarFile ->
+                    try {
+                        JarFile(jarFile).use { jar ->
+                            jar.entries().asSequence()
+                                .filter { entry ->
+                                    !entry.isDirectory &&
+                                            entry.name.endsWith(".json") &&
+                                            !entry.name.contains("/")
+                                }
+                                .forEach { entry ->
+                                    jar.getInputStream(entry).use { inputStream ->
+                                        val jsonString = inputStream.bufferedReader().readText()
+                                        try {
+                                            val schema = json.decodeFromString<HolonetSchema>(jsonString)
+                                            schemas[schema.pluginId] = schema
+                                            _cachedModules[schema.pluginId] = jarFile
+                                        } catch (e: Exception) {
+                                            println("Failed to parse schema file ${entry.name}: ${e.message}")
+                                        }
+                                    }
+                                }
                         }
+                    } catch (e: Exception) {
+                        println("Failed to read jar file ${jarFile.name}: ${e.message}")
                     }
                 }
             }
@@ -73,23 +97,10 @@ class ConfigurationService {
         }
     }
 
-    suspend fun getModuleNames(): List<String> {
-        return withContext(Dispatchers.IO) {
-            val moduleNames = mutableListOf<String>()
-            val pluginDir = File(getPluginsFolder())
+    suspend fun addModules(modules: List<PlatformFile>, overwrite: Boolean = false): List<String> {
+        // Check and save if any modules are already present
+        val existingModules = mutableListOf<String>()
 
-            if (pluginDir.exists() && pluginDir.isDirectory) {
-                // Load all subdirectories
-                pluginDir.listFiles { file -> file.isDirectory }?.forEach { dir ->
-                    moduleNames.add(dir.name)
-                }
-            }
-
-            moduleNames
-        }
-    }
-
-    suspend fun addModules(modules: List<PlatformFile>) {
         withContext(Dispatchers.IO) {
             val pluginDir = File(getPluginsFolder())
             if (!pluginDir.exists()) {
@@ -98,31 +109,32 @@ class ConfigurationService {
 
             modules.forEach { module ->
                 val destFile = PlatformFile("$pluginDir/${module.name}")
-                module.copyTo(destFile)
+                if (destFile.exists() && !overwrite) {
+                    existingModules.add(module.name)
+                } else {
+                    module.copyTo(destFile)
+                }
             }
+        }
+
+        return existingModules
+    }
+
+    suspend fun deleteModules(pluginIds: List<String>) {
+        withContext(Dispatchers.IO) {
+            pluginService?.unloadPlugin(pluginIds)
+            removeModulesFromConfiguration(pluginIds)
         }
     }
 
-    suspend fun deleteModules(moduleNames: List<String>) {
-        withContext(Dispatchers.IO) {
-            val pluginDir = File(getPluginsFolder())
-            if (!pluginDir.exists()) {
-                return@withContext
-            }
-
-            moduleNames.forEach { moduleName ->
-                // Delete folder
-                val moduleDir = File(pluginDir, moduleName)
-                if (moduleDir.exists() && moduleDir.isDirectory) {
-                    moduleDir.deleteRecursively()
-                }
-                // Delete zip file
-                val moduleZip = File(pluginDir, "$moduleName.zip")
-                if (moduleZip.exists() && moduleZip.isFile) {
-                    moduleZip.delete()
-                }
-            }
+    private suspend fun removeModulesFromConfiguration(pluginIds: List<String>) {
+        _cachedConfig.value?.let { config ->
+            _cachedConfig.value = config.copy(
+                modules = config.modules.filterKeys { it !in pluginIds }
+            )
         }
+
+        writeConfiguration(_cachedConfig.value!!)
     }
 
     private suspend fun writeConfiguration(configuration: HolonetConfiguration) {
